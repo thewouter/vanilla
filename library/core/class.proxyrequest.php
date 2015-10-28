@@ -1,39 +1,45 @@
 <?php
+
+/**
+ * @copyright 2009-2015 Vanilla Forums Inc.
+ * @license http://www.opensource.org/licenses/gpl-2.0.php GNU GPL v2
+ */
+
 /**
  * ProxyRequest handler class.
  *
+ * This class abstracts the work of doing external requests.
+ * 
  * @author Tim Gunter <tim@vanillaforums.com>
- * @copyright 2009-2015 Vanilla Forums Inc.
- * @license http://www.opensource.org/licenses/gpl-2.0.php GNU GPL v2
  * @package Core
  * @since 2.0.18
  */
-
-/**
- * This class abstracts the work of doing external requests.
- */
 class ProxyRequest {
+    
+    /**
+     * 
+     */
     const MAX_LOG_BODYLENGTH = 500;
 
-    protected $CookieJar;
+    protected $cookieJar;
 
-    public $MaxReadSize = 4096;
+    public $maxReadSize = 4096;
 
-    public $RequestDefaults;
+    protected $requestDefaults;
 
-    public $RequestHeaders;
+    protected $requestHeaders;
 
-    public $RequestBody;
+    protected $requestBody;
 
-    public $ParsedBody;
+    protected $parsedBody;
 
-    public $ResponseHeaders;
+    protected $responseHeaders;
 
-    public $ResponseStatus;
+    protected $responseStatus;
 
-    public $ResponseBody;
+    protected $responseBody;
 
-    public $ResponseTime;
+    protected $responseTime;
 
     public $ContentType;
 
@@ -77,9 +83,9 @@ class ProxyRequest {
 
         $CookieKey = md5(mt_rand(0, 72312189).microtime(true));
         if (defined('PATH_CACHE')) {
-            $this->CookieJar = CombinePaths(array(PATH_CACHE, "cookiejar.{$CookieKey}"));
+            $this->cookieJar = CombinePaths(array(PATH_CACHE, "cookiejar.{$CookieKey}"));
         } else {
-            $this->CookieJar = CombinePaths(array("/tmp", "cookiejar.{$CookieKey}"));
+            $this->cookieJar = CombinePaths(array("/tmp", "cookiejar.{$CookieKey}"));
         }
 
         if (!is_array($RequestDefaults)) {
@@ -105,7 +111,7 @@ class ProxyRequest {
             'Simulate' => false       // Don't actually request, just set up
         );
 
-        $this->RequestDefaults = array_merge($Defaults, $RequestDefaults);
+        $this->requestDefaults = array_merge($Defaults, $RequestDefaults);
     }
 
     /**
@@ -120,7 +126,7 @@ class ProxyRequest {
         $Key = trim(array_shift($Line));
         $Value = trim(implode(':', $Line));
         if (!empty($Key)) {
-            $this->ResponseHeaders[$Key] = $Value;
+            $this->responseHeaders[$Key] = $Value;
         }
         return strlen($HeaderString);
     }
@@ -130,40 +136,40 @@ class ProxyRequest {
      * @return mixed|string
      */
     protected function curlReceive(&$Handler) {
-        $this->ResponseHeaders = array();
+        $this->responseHeaders = array();
         $startTime = microtime(true);
         $Response = curl_exec($Handler);
-        $this->ResponseTime = microtime(true) - $startTime;
+        $this->responseTime = microtime(true) - $startTime;
 
-        $this->ResponseStatus = curl_getinfo($Handler, CURLINFO_HTTP_CODE);
+        $this->responseStatus = curl_getinfo($Handler, CURLINFO_HTTP_CODE);
         $this->ContentType = strtolower(curl_getinfo($Handler, CURLINFO_CONTENT_TYPE));
         $this->ContentLength = (int)curl_getinfo($Handler, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
 
         $RequestHeaderInfo = trim(curl_getinfo($Handler, CURLINFO_HEADER_OUT));
         $RequestHeaderLines = explode("\n", $RequestHeaderInfo);
         $Request = trim(array_shift($RequestHeaderLines));
-        $this->RequestHeaders['HTTP'] = $Request;
+        $this->requestHeaders['HTTP'] = $Request;
         // Parse header status line
         foreach ($RequestHeaderLines as $Line) {
             $Line = explode(':', trim($Line));
             $Key = trim(array_shift($Line));
             $Value = trim(implode(':', $Line));
-            $this->RequestHeaders[$Key] = $Value;
+            $this->requestHeaders[$Key] = $Value;
         }
-        $this->action(" Request Headers: ".print_r($this->RequestHeaders, true));
-        $this->action(" Response Headers: ".print_r($this->ResponseHeaders, true));
+        $this->action(" Request Headers: ".print_r($this->requestHeaders, true));
+        $this->action(" Response Headers: ".print_r($this->responseHeaders, true));
 
         if ($Response == false) {
             $Success = false;
-            $this->ResponseBody = curl_error($Handler);
-            return $this->ResponseBody;
+            $this->responseBody = curl_error($Handler);
+            return $this->responseBody;
         }
 
         if ($this->Options['TransferMode'] == 'normal') {
             $Response = trim($Response);
         }
 
-        $this->ResponseBody = $Response;
+        $this->responseBody = $Response;
 
         if ($this->SaveFile) {
             $Success = file_exists($this->SaveFile);
@@ -176,10 +182,10 @@ class ProxyRequest {
                 'Type' => curl_getinfo($Handler, CURLINFO_CONTENT_TYPE),
                 'File' => $this->SaveFile
             );
-            $this->ResponseBody = json_encode($SavedFileResponse);
+            $this->responseBody = json_encode($SavedFileResponse);
         }
 
-        return $this->ResponseBody;
+        return $this->responseBody;
     }
 
     /**
@@ -220,13 +226,13 @@ class ProxyRequest {
             $Options = array();
         }
 
-        $this->Options = $Options = array_merge($this->RequestDefaults, $Options);
+        $this->Options = $Options = array_merge($this->requestDefaults, $Options);
 
-        $this->ResponseHeaders = array();
-        $this->ResponseStatus = "";
-        $this->ResponseBody = "";
-        $this->RequestBody = "";
-        $this->ResponseTime = 0;
+        $this->responseHeaders = array();
+        $this->responseStatus = "";
+        $this->responseBody = "";
+        $this->requestBody = "";
+        $this->responseTime = 0;
         $this->ContentLength = 0;
         $this->ContentType = '';
         $this->ConnectionMode = '';
@@ -432,8 +438,8 @@ class ProxyRequest {
         }
 
         if ($CookieJar) {
-            curl_setopt($Handler, CURLOPT_COOKIEJAR, $this->CookieJar);
-            curl_setopt($Handler, CURLOPT_COOKIEFILE, $this->CookieJar);
+            curl_setopt($Handler, CURLOPT_COOKIEJAR, $this->cookieJar);
+            curl_setopt($Handler, CURLOPT_COOKIEFILE, $this->cookieJar);
         }
 
         if ($CookieSession) {
@@ -487,7 +493,7 @@ class ProxyRequest {
                 $SendExtraHeaders['Content-Length'] = strlen($PostData);
             }
 
-            $this->RequestBody = $PostData;
+            $this->requestBody = $PostData;
         }
 
         // Allow PUT
@@ -514,7 +520,7 @@ class ProxyRequest {
                     $SendExtraHeaders['Content-Length'] = strlen($TempPostData);
                 }
 
-                $this->RequestBody = $PostData;
+                $this->requestBody = $PostData;
             }
         }
 
@@ -540,19 +546,19 @@ class ProxyRequest {
         curl_close($Handler);
 
 
-        $logContext['responseCode'] = $this->ResponseStatus;
-        $logContext['responseTime'] = $this->ResponseTime;
+        $logContext['responseCode'] = $this->responseStatus;
+        $logContext['responseTime'] = $this->responseTime;
 
         // Add the response body to the log entry if it isn't too long or we are debugging.
         if (debug() || strlen($this->responseBody) < self::MAX_LOG_BODYLENGTH) {
             if ($this->ContentType == 'application/json') {
-                $body = @json_decode($this->ResponseBody, true);
+                $body = @json_decode($this->responseBody, true);
                 if (!$body) {
-                    $body = $this->ResponseBody;
+                    $body = $this->responseBody;
                 }
                 $logContext['responseBody'] = $body;
             } else {
-                $logContext['responseBody'] = $this->ResponseBody;
+                $logContext['responseBody'] = $this->responseBody;
             }
         }
         if (val('Log', $Options, true)) {
@@ -564,7 +570,7 @@ class ProxyRequest {
         }
 
         $this->Loud = $OldVolume;
-        return $this->ResponseBody;
+        return $this->responseBody;
     }
 
     /**
@@ -587,8 +593,8 @@ class ProxyRequest {
      *
      */
     public function __destruct() {
-        if (file_exists($this->CookieJar)) {
-            @unlink($this->CookieJar);
+        if (file_exists($this->cookieJar)) {
+            @unlink($this->cookieJar);
         }
     }
 
@@ -614,7 +620,7 @@ class ProxyRequest {
      * @return boolean Whether the response matches or not
      */
     public function responseClass($Class) {
-        $Code = (string)$this->ResponseStatus;
+        $Code = (string)$this->responseStatus;
         if (is_null($Code)) {
             return false;
         }
@@ -632,29 +638,39 @@ class ProxyRequest {
     }
 
     /**
-     *
+     * Get response headers
      *
      * @return mixed
      */
     public function headers() {
-        return $this->ResponseHeaders;
+        return $this->responseHeaders;
     }
 
     /**
-     *
+     * Get response status
      *
      * @return mixed
      */
     public function status() {
-        return $this->ResponseStatus;
+        return $this->responseStatus;
     }
 
     /**
-     *
+     * Get response body
      *
      * @return mixed
      */
     public function body() {
-        return $this->ResponseBody;
+        return $this->responseBody;
     }
+    
+    /**
+     * Get request elapsed time
+     * 
+     * @return float seconds
+     */
+    public function time() {
+        return $this->responseTime;
+    }
+    
 }
