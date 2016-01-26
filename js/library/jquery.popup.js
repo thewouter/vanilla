@@ -190,11 +190,16 @@ Copyright 2007 Chris Wanstrath [ chris@ozmm.org ]
                 document.location = target;
              } else {
                 // request the target via ajax
+                var ajaxData = {'DeliveryType' : settings.deliveryType, 'DeliveryMethod' : 'JSON'};
+                if (settings.doPost) {
+                   ajaxData.TransientKey = gdn.definition('TransientKey');
+                }
                 $.popup.loading(settings);
+
                 $.ajax({
-                   type: "GET",
+                   method: settings.doPost ? 'POST' : 'GET',
                    url: target,
-                   data: {'DeliveryType' : settings.deliveryType, 'DeliveryMethod' : 'JSON'},
+                   data: ajaxData,
                    dataType: 'json',
                    error: function(xhr) {
                       gdn.informError(xhr);
@@ -213,12 +218,15 @@ Copyright 2007 Chris Wanstrath [ chris@ozmm.org ]
           });
        } else {
           if (target) {
+             var ajaxData = { 'DeliveryType': settings.deliveryType };
+             if (settings.doPost) {
+                ajaxData.TransientKey = gdn.definition('TransientKey');
+             }
+
              $.ajax({
-                type: 'GET',
+                method: settings.doPost ? 'POST' : 'GET',
                 url: target,
-                data: {
-                   'DeliveryType': settings.deliveryType
-                },
+                data: ajaxData,
                 error: function(request, textStatus, errorThrown) {
                    $.popup.reveal(settings, request.responseText);
                 },
@@ -288,7 +296,6 @@ Copyright 2007 Chris Wanstrath [ chris@ozmm.org ]
                settings.onSave(settings); // Notify the user that it is being saved.
             },
             success: function(json) {
-               json = $.postParseJson(json);
                gdn.inform(json);
                gdn.processTargets(json.Targets);
 
@@ -318,8 +325,6 @@ Copyright 2007 Chris Wanstrath [ chris@ozmm.org ]
                if (typeof(data) == 'object') {
                   if (data.RedirectUrl)
                      setTimeout(function() { document.location.replace(data.RedirectUrl); }, 300);
-
-                  $.postParseJson(data);
                }
                $.popup.reveal(settings, data);
                //$('#'+settings.popupId+' .Content').html(data);
@@ -340,6 +345,7 @@ Copyright 2007 Chris Wanstrath [ chris@ozmm.org ]
 
    $.popup.settings = {
       targetUrl:        false,        // Use this URL instead of one provided by the matched element?
+      doPost:           false,        // Use POST, instead of GET, when performing an AJAX request?
       confirm:          false,        // Pop up a confirm message?
       followConfirm:    false,        // Follow the confirm url after OK, or request it with ajax?
       afterConfirm:     function(json, sender) {

@@ -34,5 +34,14 @@
 			"library/core/functions.general.php",
 			"library/core/functions.compatibility.php"
 		]
+	},
+	"scripts": {
+		"pre-install-cmd": "Vanilla\\Setup\\ComposerHelper::preUpdate",
+		"pre-update-cmd": "Vanilla\\Setup\\ComposerHelper::preUpdate"
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"VanillaTests\\": "tests"
+		}
 	}
 }
