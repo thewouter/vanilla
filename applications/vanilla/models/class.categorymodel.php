@@ -51,20 +51,20 @@ class CategoryModel extends Gdn_Model {
     }
 
     /**
+     * Returns an array of discussion types that are allowed for a category.
      *
-     *
-     * @param $Category
+     * @param int $categoryID The ID of the category to check for.
      * @return array
      */
-    public static function allowedDiscussionTypes($Category) {
-        $Category = self::permissionCategory($Category);
-        $Allowed = val('AllowedDiscussionTypes', $Category);
-        $AllTypes = DiscussionModel::discussionTypes();
+    public static function allowedDiscussionTypes($categoryID) {
+        $category = self::categories($categoryID);
+        $allowed = val('AllowedDiscussionTypes', $category);
+        $allTypes = DiscussionModel::discussionTypes();
 
-        if (empty($Allowed) || !is_array($Allowed)) {
-            return $AllTypes;
+        if (empty($allowed) || !is_array($allowed)) {
+            return $allTypes;
         } else {
-            return array_intersect_key($AllTypes, array_flip($Allowed));
+            return array_intersect_key($allTypes, array_flip($allowed));
         }
     }
 
@@ -435,9 +435,10 @@ class CategoryModel extends Gdn_Model {
      * @param null $CategoryID
      * @param array $Filter
      * @param array $PermFilter
+     * @param array|string $allowedDiscussionTypes If the category does not allow at least one of these types, we'll remove it.
      * @return array
      */
-    public static function getByPermission($Permission = 'Discussions.Add', $CategoryID = null, $Filter = array(), $PermFilter = array()) {
+    public static function getByPermission($Permission = 'Discussions.Add', $CategoryID = null, $Filter = array(), $PermFilter = array(), $allowedDiscussionTypes = []) {
         static $Map = array('Discussions.Add' => 'PermsDiscussionsAdd', 'Discussions.View' => 'PermsDiscussionsView');
         $Field = $Map[$Permission];
         $DoHeadings = c('Vanilla.Categories.DoHeadings');
@@ -473,6 +474,17 @@ class CategoryModel extends Gdn_Model {
                         $Exclude = !$PermFilters[$PermCategory['CategoryID']];
                     } else {
                         $Exclude = true;
+                    }
+                }
+
+                if (!$Exclude && !empty($allowedDiscussionTypes)) {
+                    if (is_string($allowedDiscussionTypes)) {
+                        $allowedDiscussionTypes = [$allowedDiscussionTypes];
+                    }
+                    $categoryAllowedDiscussionTypes = val('AllowedDiscussionTypes', $Category);
+                    if ($categoryAllowedDiscussionTypes) { // If AllowedDiscussionTypes has not been set
+                        $allowedTypes = array_intersect($allowedDiscussionTypes, $categoryAllowedDiscussionTypes);
+                        $Exclude = empty($allowedTypes);
                     }
                 }
 
