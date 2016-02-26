@@ -17,7 +17,7 @@ class DiscussionModel extends VanillaModel {
     const CACHE_DISCUSSIONVIEWS = 'discussion.%s.countviews';
 
     /** @var string Default column to order by. */
-    const DEFAULT_ORDER_BY_FIELD = 'd.DateLastComment';
+    const DEFAULT_ORDER_BY_FIELD = 'DateLastComment';
 
     /** @var string The filter key for discussions in the User table's UserPreferences field. */
     const FILTER_USER_PREFERENCE_KEY = 'Discussions.FilterKeys';
@@ -46,9 +46,9 @@ class DiscussionModel extends VanillaModel {
      * - **orderBy**: string - An array indicating order by fields and their directions in the format: array('field1' => 'direction', 'field2' => 'direction')
      */
     protected static $sorts = array(
-        'hot' => array('key' => 'hot', 'name' => 'Hot', 'orderBy' => array('d.DateLastComment' => 'desc')),
-        'top' => array('key' => 'top', 'name' => 'Top', 'orderBy' => array('d.Score' => 'desc', 'd.DateInserted' => 'desc')),
-        'new' => array('key' => 'new', 'name' => 'New', 'orderBy' => array('d.DateInserted' => 'desc'))
+        'hot' => array('key' => 'hot', 'name' => 'Hot', 'orderBy' => array('DateLastComment' => 'desc')),
+        'top' => array('key' => 'top', 'name' => 'Top', 'orderBy' => array('Score' => 'desc', 'DateInserted' => 'desc')),
+        'new' => array('key' => 'new', 'name' => 'New', 'orderBy' => array('DateInserted' => 'desc'))
     );
 
     /**
@@ -433,31 +433,36 @@ class DiscussionModel extends VanillaModel {
     }
 
     /**
-     * Returns an array of 'field' => 'direction', values. Checks request, then user preferences, then config before
+     * Returns an array of field => direction, values. Checks request, then user preferences, then config before
      * settling on the default ordering fields.
      *
      * You can safely use return values from this function in the orderBy() SQL function.
      *
      * @since 2.3
      *
-     * @return array
+     * @return array An array of field => direction values.
      */
     protected function getOrderBy() {
         $orderBy = [];
+        $setPreference = false;
 
         // Try request
         if (!$sortKey = self::getSortFromRequest()) {
-
             // Try user preference
             $sortKey = self::getSortFromUserPreferences();
         } else {
-            self::setSortUserPreferences($sortKey);
+            $setPreference = true;
         }
 
         if ($sortKey) {
-            self::$sortKeySelected = $sortKey;
             $sort = self::getSortFromKey($sortKey);
-            $orderBy = val('orderBy', $sort, []);
+            if ($sort) {
+                if ($setPreference) {
+                    self::setSortUserPreferences($sortKey);
+                }
+                self::$sortKeySelected = $sortKey;
+                $orderBy = val('orderBy', $sort, []);
+            }
         }
 
         if (empty($orderBy)) {
@@ -479,22 +484,28 @@ class DiscussionModel extends VanillaModel {
      */
     protected function getWheres() {
         $wheres = [];
+        $setPreference = false;
 
         // Try request
         if (!$filterKeys = self::getFiltersFromRequest()) {
-
             // Try user preference
             $filterKeys = self::getFiltersFromUserPreferences();
         } else {
-            self::setFilterUserPreferences($filterKeys);
+            $setPreference = true;
         }
 
         if (!$filterKeys) {
             return [];
         }
 
-        self::$filterKeysSelected = $filterKeys;
         $filters = self::getFiltersFromKeys($filterKeys);
+
+        if (!empty($filters)) {
+            if ($setPreference) {
+                self::setFilterUserPreferences($filterKeys);
+            }
+            self::$filterKeysSelected = $filterKeys;
+        }
 
         foreach($filters as $filter) {
             $wheres = $this->combineWheres(val('wheres', $filter, []), $wheres);
@@ -2845,7 +2856,7 @@ class DiscussionModel extends VanillaModel {
      */
     public static function setSortUserPreferences($sortKey) {
         if (Gdn::session()->isValid()) {
-            Gdn::userModel()->SavePreference(Gdn::session()->UserID, self::SORT_USER_PREFERENCE_KEY, $sortKey);
+            Gdn::userModel()->savePreference(Gdn::session()->UserID, self::SORT_USER_PREFERENCE_KEY, $sortKey);
         }
     }
 
@@ -2858,7 +2869,7 @@ class DiscussionModel extends VanillaModel {
      */
     public static function setFilterUserPreferences($filterKeyValues) {
         if (Gdn::session()->isValid()) {
-            Gdn::userModel()->SavePreference(Gdn::session()->UserID, self::FILTER_USER_PREFERENCE_KEY, $filterKeyValues);
+            Gdn::userModel()->savePreference(Gdn::session()->UserID, self::FILTER_USER_PREFERENCE_KEY, $filterKeyValues);
         }
     }
 
