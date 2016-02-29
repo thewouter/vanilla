@@ -387,7 +387,7 @@ class DiscussionModel extends VanillaModel {
         }
 
         foreach ($orderBy as $orderField => $direction) {
-            $this->SQL->orderBy($orderField, $direction);
+            $this->SQL->orderBy($this->addFieldPrefix($orderField), $direction);
         }
 
         // Set range and fetch
@@ -522,14 +522,16 @@ class DiscussionModel extends VanillaModel {
      * @return array A set of where clauses, array form.
      */
     protected function combineWheres($newWheres, $wheres) {
-        foreach($newWheres as $key => $value) {
+        foreach($newWheres as $field => $value) {
             // Combine all our where clauses.
-            if (!array_key_exists($key, $wheres)) {
-                $wheres[$key] = $value;
-            } elseif (is_array($wheres[$key])) {
-                $wheres[$key][] = $value;
-            } else {
-                $wheres[$key] = [$wheres[$key], $value];
+            if (!array_key_exists($field, $wheres)) {
+                // Add a new where field to the list.
+                $wheres[$field] = $value;
+            } elseif (is_array($wheres[$field])) {
+                if (!in_array($value, $wheres[$field])) {
+                    // Add a new where value.
+                    $wheres[$field][] = $value;
+                }
             }
         }
         return $wheres;
@@ -607,12 +609,7 @@ class DiscussionModel extends VanillaModel {
             ->limit($Limit, $Offset);
 
         foreach ($orderBy as $field => $direction) {
-            // Make sure there aren't any ambiguous discussion references.
-            if (strpos($field, '.') === false) {
-                $field = 'd.'.$field;
-            }
-
-            $Sql->orderBy($field, $direction);
+            $Sql->orderBy($this->addFieldPrefix($field), $direction);
         }
 
         // Verify permissions (restricting by category if necessary)
@@ -638,14 +635,11 @@ class DiscussionModel extends VanillaModel {
         }
 
         // Make sure there aren't any ambiguous discussion references.
+        $safeWheres = [];
         foreach ($Where as $Key => $Value) {
-            if (strpos($Key, '.') === false) {
-                $Where['d.'.$Key] = $Value;
-                unset($Where[$Key]);
-            }
+            $safeWheres[$this->addFieldPrefix($Key)] = $Value;
         }
-
-        $Sql->where($Where);
+        $Sql->where($safeWheres);
 
         // Add the UserDiscussion query.
         if (($UserID = Gdn::session()->UserID) > 0) {
@@ -681,6 +675,21 @@ class DiscussionModel extends VanillaModel {
         $this->fireEvent('AfterAddColumns');
 
         return $Data;
+    }
+
+    /**
+     * Adds a prefix to the field name if the field doesn't already have one.
+     *
+     * @param string $fieldName The name of the field.
+     * @param string $prefix
+     * @return string The fieldname with the prefix if one does not exist.
+     */
+    public function addFieldPrefix($fieldName, $prefix = 'd') {
+        // Make sure there aren't any ambiguous discussion references.
+        if (strpos($fieldName, '.') === false) {
+            $fieldName = $prefix.'.'.$fieldName;
+        }
+        return $fieldName;
     }
 
     /**
@@ -767,7 +776,7 @@ class DiscussionModel extends VanillaModel {
             $SortDirection = 'desc';
         }
 
-        $this->SQL->orderBy($SortField, $SortDirection);
+        $this->SQL->orderBy($this->addFieldPrefix($SortField), $SortDirection);
 
         // Set range and fetch
         $Data = $this->SQL->get();
@@ -998,6 +1007,7 @@ class DiscussionModel extends VanillaModel {
      * @return object SQL result.
      */
     public function getAnnouncements($Wheres = '') {
+        $Wheres = $this->combineWheres($this->getWheres(), $Wheres);
         $Session = Gdn::session();
         $Limit = Gdn::config('Vanilla.Discussions.PerPage', 50);
         $Offset = 0;
@@ -1075,7 +1085,7 @@ class DiscussionModel extends VanillaModel {
         $this->SQL->limit($Limit, $Offset);
 
         foreach ($orderBy as $field => $direction) {
-            $this->SQL->orderBy($field, $direction);
+            $this->SQL->orderBy($this->addFieldPrefix($field), $direction);
         }
 
         $Data = $this->SQL->get();
@@ -1367,6 +1377,7 @@ class DiscussionModel extends VanillaModel {
      * @return int Number of discussions.
      */
     public function getCount($Wheres = '', $ForceNoAnnouncements = false) {
+        $Wheres = $this->combineWheres($this->getWheres(), $Wheres);
         if (is_array($Wheres) && count($Wheres) == 0) {
             $Wheres = '';
         }
@@ -2933,16 +2944,16 @@ class DiscussionModel extends VanillaModel {
      * Get the current sort/filter query string by passing no parameters or pass either a new filter key or sort key
      * to build a new query string, leaving the other properties intact.
      *
-     * @param array $filterKeys An array of filters, where the key is the key of the filterSet
+     * @param array $filterKeysToSet An array of filters, where the key is the key of the filterSet
      *      in the filters array and the value is the key of the filter.
      * @param string $sortKey The key name of the sort in the sorts array.
      * @return string The current or amended query string for sort and filter.
      */
-    public static function sortFilterQueryString($filterKeys = [], $sortKey = '') {
+    public static function sortFilterQueryString($filterKeysToSet = [], $sortKey = '') {
         $filterString = '';
-        if (!$filterKeys) {
-            $filterKeys = self::getFiltersFromRequest();
-        }
+        $filterKeys = self::getFiltersFromRequest();
+        $filterKeys = array_merge($filterKeys, $filterKeysToSet);
+
         // Build the sort query string
         foreach ($filterKeys as $setKey => $filterKey) {
             if (!empty($filterString)) {
@@ -2991,8 +3002,8 @@ class DiscussionModel extends VanillaModel {
      * @param string $key The key name of the filter. Appears in the query string, should be url-friendly.
      * @param string $name The display name of the filter. Usually appears as an option in the UI.
      * @param array $wheres The where array query to execute for the filter. Uses
-     * @param string $group The dropdown module will group together any items with the same group name.
-     * @param string $setKey The name of the
+     * @param string $group (optional) The nav module will group together any items with the same group name.
+     * @param string $setKey The key name of the filter set.
      */
     public static function addFilter($key, $name, $wheres, $group = '', $setKey = 'filter') {
         if (!val($setKey, self::getFilters())) {
@@ -3005,8 +3016,10 @@ class DiscussionModel extends VanillaModel {
     }
 
     /**
-     * @param $setKey
-     * @param string $setName
+     * Adds a filter set to the filters array.
+     *
+     * @param string $setKey The key name of the filter set.
+     * @param string $setName The name of the filter set. Appears in the UI.
      */
     public static function addFilterSet($setKey, $setName = '') {
         if (!$setName) {
@@ -3070,7 +3083,7 @@ class DiscussionModel extends VanillaModel {
         self::$filters[$setKey]['filters']['none'] = array(
             'key' => 'none',
             'setKey' => $setKey,
-            'name' => $setName,
+            'name' => sprintf(t('Clear %s'), $setName),
             'wheres' => array(), 'group' => 'default'
         );
     }
