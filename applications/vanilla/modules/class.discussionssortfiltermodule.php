@@ -12,18 +12,33 @@
 /**
  * DiscussionsSortFilterModule
  *
- * Renders a sort/filter module on a discussions view. Currently only supported in /categories discussions views.
+ * Renders a sort/filter module on a discussions view based on the sorts and filters in the Discussion Model.
+ * If there are category-specific filters, the categoryID property must be set in order for it to render the
+ * filters for the category.
  *
  */
 class DiscussionsSortFilterModule extends Gdn_Module {
 
     const ACTIVE_CSS_CLASS = 'Active active';
 
+    /** @var array The sorts to render. */
     protected $sorts;
 
+    /** @var array The filters to render. */
     protected $filters;
 
-    public function __construct() {}
+    /** @var int The ID of the category we're in. */
+    protected $categoryID;
+
+    /**
+     * @param int $categoryID The ID of the category we're in.
+     */
+    public function __construct($categoryID = 0) {
+        parent::__construct();
+        if ($categoryID) {
+            $this->categoryID = $categoryID;
+        }
+    }
 
     /**
      * Checks whether we should even render this whole thing.
@@ -45,14 +60,23 @@ class DiscussionsSortFilterModule extends Gdn_Module {
     protected function getSortData() {
         $sortData = array();
         foreach($this->sorts as $sort) {
+            // Check to see if there's a category restriction.
+            if ($categories = val('categories', $sort)) {
+                if (!in_array($this->categoryID, $categories)) {
+                    continue;
+                }
+            }
             $key = val('key', $sort);
             $sortData[$key]['name'] = val('name', $sort);
-            $sortData[$key]['url'] = $this->getPagelessPath().DiscussionModel::sortFilterQueryString([], $key);
+            $sortData[$key]['url'] = $this->getPagelessPath().DiscussionModel::getSortFilterQueryString([], $key);
             $sortData[$key]['rel'] = 'nofollow';
-            if (DiscussionModel::getSortKeySelected() == val('key', $sort)) {
-                $sortData[$key]['cssClass'] = self::ACTIVE_CSS_CLASS;
-            }
         }
+        $selectedKey = DiscussionModel::getSortKeySelected() ? DiscussionModel::getSortKeySelected() : DiscussionModel::getDefaultSortKey();
+        if (val($selectedKey, $sortData)) {
+            $sortData[$selectedKey]['cssClass'] = self::ACTIVE_CSS_CLASS;
+        }
+
+
         return $sortData;
     }
 
@@ -68,11 +92,17 @@ class DiscussionsSortFilterModule extends Gdn_Module {
         }
         $dropdowns = [];
         foreach($this->filters as $filterSet) {
+            // Check to see if there's a category restriction.
+            if ($categories = val('categories', $filterSet)) {
+                if (!in_array($this->categoryID, $categories)) {
+                    continue;
+                }
+            }
             $setKey = val('key', $filterSet);
             $dropdown = new DropdownModule('discussions-filter-'.$setKey, val('name', $filterSet), 'discussion-filter');
 
             // Override the trigger text?
-            $selectedFilterKeys = DiscussionModel::getFilterKeySelected();
+            $selectedFilterKeys = DiscussionModel::getFilterKeysSelected();
             $selectedValue = val($setKey, $selectedFilterKeys);
             if ($selectedValue && $selectedValue != 'none') {
                 $selected = val('name', $filterSet['filters'][$selectedValue]);
@@ -87,7 +117,7 @@ class DiscussionsSortFilterModule extends Gdn_Module {
                 $key = val('group', $filter, '') . '.' . val('key', $filter);
                 $dropdown->addLink(
                     val('name', $filter),
-                    url($this->getPagelessPath().DiscussionModel::sortFilterQueryString([$setKey => val('key', $filter)])),
+                    url($this->getPagelessPath().DiscussionModel::getSortFilterQueryString([$setKey => val('key', $filter)])),
                     $key,
                     '', array(), false,
                     array('rel' => 'nofollow')
