@@ -50,22 +50,30 @@ class CategoryModel extends Gdn_Model {
         parent::__construct('Category');
     }
 
-    /**
-     * Returns an array of discussion types that are allowed for a category.
-     *
-     * @param int $categoryID The ID of the category to check for.
-     * @return array
-     */
-    public static function allowedDiscussionTypes($categoryID) {
-        $category = self::categories($categoryID);
-        $allowed = val('AllowedDiscussionTypes', $category);
-        $allTypes = DiscussionModel::discussionTypes();
 
-        if (empty($allowed) || !is_array($allowed)) {
-            return $allTypes;
+    /**
+     * Checks the allowed discussion types on a category.
+     *
+     * @param array $PermissionCategory The permission category of the category.
+     * @param array $category The category we're checking the permission on.
+     * @return array The allowed discussion types on the category.
+     * @throws Exception
+     */
+    public static function allowedDiscussionTypes($PermissionCategory, $category = []) {
+        $PermissionCategory = self::permissionCategory($PermissionCategory);
+        $Allowed = val('AllowedDiscussionTypes', $PermissionCategory);
+        $AllTypes = DiscussionModel::discussionTypes();
+        if (empty($Allowed) || !is_array($Allowed)) {
+            $allowedTypes = $AllTypes;
         } else {
-            return array_intersect_key($allTypes, array_flip($allowed));
+            $allowedTypes = array_intersect_key($AllTypes, array_flip($Allowed));
         }
+        Gdn::pluginManager()->EventArguments['AllowedDiscussionTypes'] = &$allowedTypes;
+        Gdn::pluginManager()->EventArguments['Category'] = $category;
+        Gdn::pluginManager()->EventArguments['PermissionCategory'] = $PermissionCategory;
+        Gdn::pluginManager()->fireEvent('AllowedDiscussionTypes');
+
+        return $allowedTypes;
     }
 
     /**
