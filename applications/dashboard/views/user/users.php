@@ -10,12 +10,15 @@ foreach ($this->UserData->result() as $User) {
     <tr id="<?php echo "UserID_{$User->UserID}"; ?>"<?php echo $Alt ? ' class="Alt"' : ''; ?>
         data-userid="<?php echo $User->UserID ?>">
         <!--      <td class="CheckboxCell"><input type="checkbox" name="LogID[]" value="<?php echo $User->UserID; ?>" /></td>-->
-        <td><strong><?php
+        <td><div class="media"><?php
+                echo userPhoto($User, ['LinkClass' => 'PhotoWrap media-figure']).' ';
+                echo '<div class="media-body">';
                 echo userAnchor($User, 'Username');
-                ?></strong></td>
-        <?php if ($ViewPersonalInfo) : ?>
-            <td class="Alt"><?php echo Gdn_Format::Email($User->Email); ?></td>
-        <?php endif; ?>
+                if ($ViewPersonalInfo) {
+                    echo ' <div class="meta meta-email">'.htmlspecialchars($User->Email).'</div>';
+                }
+                echo '</div>';
+                ?></div></td>
         <td style="max-width: 200px;">
             <?php
             $Roles = val('Roles', $User, array());

@@ -9,9 +9,16 @@
 <body id="<?php echo htmlspecialchars($BodyIdentifier); ?>" class="<?php echo htmlspecialchars($this->CssClass); ?>">
 <div id="Frame">
     <div id="Head">
-        <h1><?php echo anchor(c('Garden.Title').' '.Wrap(t('Visit Site')), '/'); ?></h1>
-
-        <div class="User">
+        <div class="head-link">
+            <?php
+            echo anchor(
+                img('/applications/dashboard/design/images/vanilla-logo.svg', ['alt' => c('Garden.Title')])
+                .' '.wrap(t('Visit Site'), 'span', ['class' => 'btn-visit']), '/'
+            );
+            ?>
+        </div>
+        <div class="head-tabs"></div>
+        <div class="head-user">
             <?php
             if (Gdn::session()->isValid()) {
                 $this->fireEvent('BeforeUserOptionsMenu');
@@ -29,12 +36,17 @@
         </div>
     </div>
     <div id="Body">
-        <div id="Panel">
+        <main id="Content"><?php $this->renderAsset('Content'); ?></main>
+        <nav id="Panel">
             <?php
             $this->renderAsset('Panel');
             ?>
-        </div>
-        <div id="Content"><?php $this->renderAsset('Content'); ?></div>
+        </nav>
+        <aside class="help-panel">
+            <?php
+            $this->renderAsset('Aside');
+            ?>
+        </aside>
     </div>
     <div id="Foot">
         <?php

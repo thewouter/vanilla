@@ -981,7 +981,7 @@ if (!function_exists('userPhoto')) {
         $Href = url(userUrl($User));
 
         if ($FullUser && $FullUser['Banned']) {
-            $Photo = c('Garden.BannedPhoto', 'https://c3409409.ssl.cf0.rackcdn.com/images/banned_large.png');
+            $Photo = c('Garden.BannedPhoto', asset('/resources/design/banned.svg', true));
             $Title .= ' ('.t('Banned').')';
         }
 
