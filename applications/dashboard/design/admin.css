@@ -31,23 +31,8 @@ Welcome to the Admin CSS File! Some things you should know:
   min-width: 65px;
 }
 
-html {
-  box-sizing: border-box;
-  font-size: 10px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  outline: 0;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: inherit;
-}
-
 /* ================================================================ Reset CSS */
-body, div, span, applet, object, iframe,
+html, body, div, span, applet, object, iframe,
 h1, h2, h3, h4, h5, h6, p, blockquote, pre,
 a, abbr, acronym, address, big, cite, code,
 del, dfn, em, font, img, ins, kbd, q, s, samp,
@@ -64,6 +49,17 @@ table, caption, tbody, tfoot, thead, tr, th, td {
   font-size: 100%;
   font-family: inherit;
   vertical-align: baseline;
+}
+
+html {
+  box-sizing: border-box;
+  font-size: 62.5%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
 }
 
 /* remember to define focus styles! */

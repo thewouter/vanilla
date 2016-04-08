@@ -1,5 +1,5 @@
 @function rems($px){
-  $remSize: $px / 10px;
+  $remSize: $px / $font-size-root;
   @return $remSize * 1rem;
 }
 
