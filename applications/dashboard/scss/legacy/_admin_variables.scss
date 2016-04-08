@@ -11,7 +11,10 @@ $font-size-base: rems(14px);
 
 $body-color: #555A62;
 $border-color: transparentize($body-color, .88);
+$icon-border-color: transparentize($body-color, .80);
 $border-radius: rems(2px);
+$link-color: $brand-primary;
+$link-hover-color: $brand-secondary;
 
 $canvas-bg: hsl(220, 3, 97);
 
@@ -38,6 +41,8 @@ $header-height: 60px;
 $header-color: transparentize(#fff, .15);
 $header-hover-color: #fff;
 
+$heading-font-weight: 500 !default;
+
 $btn-padding-x: 12px !default;
 $btn-padding-y: 4px !default;
 $btn-line-height: $control-height - 2 * $btn-padding-y - 2px !default;
@@ -62,7 +67,7 @@ $input-padding-x: 12px !default;
 $input-padding-y: 4px !default;
 $input-line-height: $control-height - 2 * $input-padding-y - 2px !default;
 
-$input-bg:                       #fff !default;
+$input-bg:  #fff !default;
 //$input-bg-disabled:              $gray-lighter !default;
 
 //$input-color:                    $gray !default;
@@ -70,4 +75,7 @@ $input-bg:                       #fff !default;
 //$input-btn-border-width:         $border-width !default; // For form controls and buttons
 //$input-box-shadow:               inset 0 1px 1px rgba(0,0,0,.075) !default;
 
-$input-border-radius:            $border-radius !default;
+$input-border-radius: $border-radius !default;
+
+$addon-icon-size: 84px;
+$addon-icon-border-radius: 6px;

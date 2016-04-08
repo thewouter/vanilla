@@ -13,14 +13,14 @@ $DisabledCount = $PluginCount - $EnabledCount;
             $(selectors).parents('li').removeClass('Active');
             $(this).parents('li').addClass('Active');
             if ($(this).hasClass('plugins-disabled')) {
-                $('tr.Enabled').hide();
-                $('tr.Disabled').show();
+                $('li.Enabled').hide();
+                $('li.Disabled').show();
             } else if ($(this).hasClass('plugins-enabled')) {
-                $('tr.Enabled').show();
-                $('tr.Disabled').hide();
+                $('li.Enabled').show();
+                $('li.Disabled').hide();
             } else {
-                $('tr.Enabled').show();
-                $('tr.Disabled').show();
+                $('li.Enabled').show();
+                $('li.Disabled').show();
             }
             return false;
         });
@@ -40,10 +40,6 @@ $DisabledCount = $PluginCount - $EnabledCount;
         <li<?php echo $this->Filter == 'all' ? ' class="Active"' : ''; ?>><?php echo anchor(sprintf(t('All %1$s'), wrap($PluginCount)), 'settings/plugins/all', 'plugins-all'); ?></li>
         <li<?php echo $this->Filter == 'enabled' ? ' class="Active"' : ''; ?>><?php echo anchor(sprintf(t('Enabled %1$s'), wrap($EnabledCount)), 'settings/plugins/enabled', 'plugins-enabled'); ?></li>
         <li<?php echo $this->Filter == 'disabled' ? ' class="Active"' : ''; ?>><?php echo anchor(sprintf(t('Disabled %1$s'), wrap($DisabledCount)), 'settings/plugins/disabled', 'plugins-disabled'); ?></li>
-        <?php
-        if ($AddonUrl != '')
-            echo wrap(Anchor(t('Get More Plugins'), $AddonUrl), 'li');
-        ?>
     </ul>
 </div>
 <?php echo $this->Form->errors(); ?>
@@ -52,14 +48,7 @@ $DisabledCount = $PluginCount - $EnabledCount;
         <li><?php echo t('The addon could not be enabled because it generated a fatal error: <pre>%s</pre>'); ?></li>
     </ul>
 </div>
-<table class="AltRows">
-    <thead>
-    <tr>
-        <th colspan="2"><?php echo t('Plugin'); ?></th>
-        <th><?php echo t('Description'); ?></th>
-    </tr>
-    </thead>
-    <tbody>
+<ul class="data-list">
     <?php
     $Alt = FALSE;
     foreach ($this->AvailablePlugins as $PluginName => $PluginInfo) {
@@ -86,89 +75,88 @@ $DisabledCount = $PluginCount - $EnabledCount;
             $IconPath = '/plugins/'.GetValue('Folder', $PluginInfo, '').'/icon.png';
             $IconPath = file_exists(PATH_ROOT.$IconPath) ? $IconPath : 'applications/dashboard/design/images/plugin-icon.png';
             ?>
-            <tr <?php echo 'id="'.Gdn_Format::url(strtolower($PluginName)).'-plugin"', ' class="More '.$RowClass.'"'; ?>>
-                <td rowspan="2" class="Less"><?php echo img($IconPath, array('class' => 'PluginIcon')); ?></td>
-                <th><?php echo $ScreenName; ?></th>
-                <td class="Alt"><?php echo Gdn_Format::Html(t(val('Name', $PluginInfo, $PluginName).' Description', val('Description', $PluginInfo, ''))); ?></td>
-            </tr>
-            <tr class="<?php echo ($Upgrade ? 'More ' : '').$RowClass; ?>">
-                <td class="Info"><?php
+            <li <?php echo 'id="'.Gdn_Format::url(strtolower($PluginName)).'-plugin"', ' class="item addon-item More '.$RowClass.'"'; ?>>
+                <div class="addon-icon">
+                    <div class="icon-wrap"><?php echo img($IconPath, array('class' => 'PluginIcon')); ?></div>
+                </div>
+                <div class="addon-body">
+                    <div class="addon-name"><?php echo $ScreenName; ?></div>
+                    <div class="meta"><?php
+                        $RequiredApplications = val('RequiredApplications', $PluginInfo, false);
+                        $RequiredPlugins = val('RequiredPlugins', $PluginInfo, false);
+                        $Info = '';
+
+                        if ($Author != '') {
+                            $Info .= sprintf(t('By %s'), $AuthorUrl != '' ? anchor($Author, $AuthorUrl) : $Author);
+                        }
+
+                        if ($Version != '') {
+                            $Info .= ' <span>·</span> ';
+                            $Info .= sprintf(t('Version %s'), $Version);
+                        }
+
+                        if (is_array($RequiredApplications) || is_array($RequiredPlugins)) {
+                            if ($Info != '')
+                                $Info .= ' <span>·</span> ';
+
+                            $Info .= t('Requires: ');
+                        }
+
+                        $i = 0;
+                        if (is_array($RequiredApplications)) {
+                            if ($i > 0)
+                                $Info .= ', ';
+
+                            foreach ($RequiredApplications as $RequiredApplication => $VersionInfo) {
+                                $Info .= sprintf(t('%1$s Version %2$s'), $RequiredApplication, $VersionInfo);
+                                ++$i;
+                            }
+                        }
+
+                        if ($RequiredPlugins !== FALSE) {
+                            foreach ($RequiredPlugins as $RequiredPlugin => $VersionInfo) {
+                                if ($i > 0)
+                                    $Info .= ', ';
+
+                                $Info .= sprintf(t('%1$s Version %2$s'), $RequiredPlugin, $VersionInfo);
+                                ++$i;
+                            }
+                        }
+
+                        if ($PluginUrl != '') {
+                            $Info .= ' <span>·</span> ';
+                            $Info .= anchor(t('Visit Site'), $PluginUrl);
+                        }
+
+                        echo $Info != '' ? $Info : '&#160;';
+
+                        ?></div>
+                    <div class="addon-description">
+                        <?php
+                        echo Gdn_Format::Html(t(val('Name', $PluginInfo, $PluginName).' Description', val('Description', $PluginInfo, '')));
+                        ?>
+                    </div>
+                </div>
+                <div class="addon-settings">
+                    <?php
+                    if ($SettingsUrl != '') {
+                        echo anchor(t('Settings'), $SettingsUrl, 'addon-settings-link');
+                    }
+                    ?>
+                </div>
+                <div class="addon-enable">
+                    <?php
                     $ToggleText = array_key_exists($PluginName, $this->EnabledPlugins) ? 'Disable' : 'Enable';
                     echo anchor(
                         t($ToggleText),
                         '/settings/plugins/'.$this->Filter.'/'.$PluginName.'/'.$Session->TransientKey(),
                         $ToggleText.'Addon SmallButton'
                     );
-
-                    if ($SettingsUrl != '')
-                        echo anchor(t('Settings'), $SettingsUrl, 'SmallButton');
-
-                    ?></td>
-                <td class="Alt Info"><?php
-                    $RequiredApplications = val('RequiredApplications', $PluginInfo, false);
-                    $RequiredPlugins = val('RequiredPlugins', $PluginInfo, false);
-                    $Info = '';
-                    if ($Version != '')
-                        $Info = sprintf(t('Version %s'), $Version);
-
-                    if (is_array($RequiredApplications) || is_array($RequiredPlugins)) {
-                        if ($Info != '')
-                            $Info .= '<span>|</span>';
-
-                        $Info .= t('Requires: ');
-                    }
-
-                    $i = 0;
-                    if (is_array($RequiredApplications)) {
-                        if ($i > 0)
-                            $Info .= ', ';
-
-                        foreach ($RequiredApplications as $RequiredApplication => $VersionInfo) {
-                            $Info .= sprintf(t('%1$s Version %2$s'), $RequiredApplication, $VersionInfo);
-                            ++$i;
-                        }
-                    }
-
-                    if ($RequiredPlugins !== FALSE) {
-                        foreach ($RequiredPlugins as $RequiredPlugin => $VersionInfo) {
-                            if ($i > 0)
-                                $Info .= ', ';
-
-                            $Info .= sprintf(t('%1$s Version %2$s'), $RequiredPlugin, $VersionInfo);
-                            ++$i;
-                        }
-                    }
-
-                    if ($Author != '') {
-                        $Info .= '<span>|</span>';
-                        $Info .= sprintf(t('By %s'), $AuthorUrl != '' ? anchor($Author, $AuthorUrl) : $Author);
-                    }
-
-                    if ($PluginUrl != '') {
-                        $Info .= '<span>|</span>';
-                        $Info .= anchor(t('Visit Site'), $PluginUrl);
-                    }
-
-                    echo $Info != '' ? $Info : '&#160;';
-
-                    ?></td>
-            </tr>
+                    ?>
+                </div>
+            </li>
             <?php
-            if ($Upgrade) {
-                ?>
-                <tr class="<?php echo $RowClass; ?>">
-                    <td colspan="2">
-                        <div class="Alert"><a href="<?php
-                            echo CombinePaths(array($UpdateUrl, 'find', urlencode($ScreenName)), '/');
-                            ?>"><?php
-                                printf(t('%1$s version %2$s is available.'), $ScreenName, $NewVersion);
-                                ?></a></div>
-                    </td>
-                </tr>
-            <?php
-            }
         }
     }
     ?>
-    </tbody>
-</table>
+</ul>

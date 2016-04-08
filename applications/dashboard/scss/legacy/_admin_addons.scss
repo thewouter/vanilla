@@ -1,0 +1,69 @@
+.data-list {
+  border-top: solid 1px $border-color;
+  .item {
+    border-bottom: solid 1px $border-color;
+    padding: $padding-y $padding-x;
+  }
+}
+
+.icon-wrap {
+  overflow: hidden;
+  position: relative;
+
+  img {
+    width: 100%;
+  }
+
+  &:after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border: solid 1px $icon-border-color;
+    border-radius: $addon-icon-border-radius;
+  }
+}
+
+.addon-item {
+  display: flex;
+
+  .addon-icon {
+    margin-right: $padding-x;
+  }
+
+  .icon-wrap {
+    width: $addon-icon-size;
+    height: $addon-icon-size;
+    border-radius: $addon-icon-border-radius;
+  }
+
+  .addon-body {
+    flex: 1;
+  }
+
+  .addon-name {
+    font-weight: $heading-font-weight;
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+
+  .meta {
+    margin: 6px 0;
+  }
+
+  .addon-description {
+    font-size: $meta-font-size;
+  }
+
+  .addon-settings {
+    flex: 0 0 64px;
+    padding: 0 $padding-x;
+  }
+
+  .addon-enable {
+    flex: 0 0 64px;
+  }
+}

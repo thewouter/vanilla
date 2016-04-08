@@ -849,7 +849,7 @@ table .PhotoWrap:after {
   left: 0;
   right: 0;
   bottom: 0;
-  border: solid 1px rgba(85, 90, 98, 0.12);
+  border: solid 1px rgba(85, 90, 98, 0.2);
   border-radius: 0.2rem;
 }
 
@@ -2048,6 +2048,15 @@ div.Summary table tbody td {
   color: #949aa2;
 }
 
+.meta a {
+  color: inherit;
+}
+
+.meta a:hover {
+  color: #ff0084;
+  text-decoration: underline;
+}
+
 .Pager {
   font-size: 16px;
   font-weight: bold;
@@ -2517,13 +2526,6 @@ div.InformMessages div.InformMessage a.Icon img {
   width: 28px;
 }
 
-/* Plugins */
-.PluginIcon {
-  display: block;
-  height: 50px;
-  width: 50px;
-}
-
 /* Getting Started Screen */
 .Welcome h2 {
   overflow: hidden;
@@ -2573,5 +2575,88 @@ div.InformMessages div.InformMessage a.Icon img {
 .ActivateSlider .SmallButton {
   margin: 0;
   min-width: 45px;
+}
+
+.data-list {
+  border-top: solid 1px rgba(85, 90, 98, 0.12);
+}
+
+.data-list .item {
+  border-bottom: solid 1px rgba(85, 90, 98, 0.12);
+  padding: 12px 18px;
+}
+
+.icon-wrap {
+  overflow: hidden;
+  position: relative;
+}
+
+.icon-wrap img {
+  width: 100%;
+}
+
+.icon-wrap:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border: solid 1px rgba(85, 90, 98, 0.2);
+  border-radius: 6px;
+}
+
+.addon-item {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.addon-item .addon-icon {
+  margin-right: 18px;
+}
+
+.addon-item .icon-wrap {
+  width: 84px;
+  height: 84px;
+  border-radius: 6px;
+}
+
+.addon-item .addon-body {
+  -webkit-box-flex: 1;
+  -webkit-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
+}
+
+.addon-item .addon-name {
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.addon-item .meta {
+  margin: 6px 0;
+}
+
+.addon-item .addon-description {
+  font-size: 1.2rem;
+}
+
+.addon-item .addon-settings {
+  -webkit-box-flex: 0;
+  -webkit-flex: 0 0 64px;
+  -ms-flex: 0 0 64px;
+  flex: 0 0 64px;
+  padding: 0 18px;
+}
+
+.addon-item .addon-enable {
+  -webkit-box-flex: 0;
+  -webkit-flex: 0 0 64px;
+  -ms-flex: 0 0 64px;
+  flex: 0 0 64px;
 }
 /*# sourceMappingURL=admin.css.map */
