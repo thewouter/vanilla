@@ -1,0 +1,73 @@
+@function rems($px){
+  $remSize: $px / 10px;
+  @return $remSize * 1rem;
+}
+
+$brand-primary: #0291DB !default;
+$brand-secondary: #ff0084 !default;
+
+$font-size-root: 10px;
+$font-size-base: rems(14px);
+
+$body-color: #555A62;
+$border-color: transparentize($body-color, .88);
+$border-radius: rems(2px);
+
+$canvas-bg: hsl(220, 3, 97);
+
+$nav-color: #565657;
+
+$padding-x: 18px;
+$padding-y: 12px;
+
+$meta-color: lighten($body-color, 25%);
+$meta-font-size: rems(12px);
+
+$control-height: 36px !default;
+$control-padding: 6px !default;
+$control-font-size: rems(14px) !default;
+
+$table-header-bg: $canvas-bg;
+$table-cell-padding: 12px;
+$table-font-size: rems(13px);
+$table-photo-size: rems(30px);
+
+$thumbnail-border-radius: $border-radius !default;
+
+$header-height: 60px;
+$header-color: transparentize(#fff, .15);
+$header-hover-color: #fff;
+
+$btn-padding-x: 12px !default;
+$btn-padding-y: 4px !default;
+$btn-line-height: $control-height - 2 * $btn-padding-y - 2px !default;
+$btn-font-weight: 500 !default;
+//$btn-box-shadow:                 inset 0 1px 0 rgba(255,255,255,.15), 0 1px 1px rgba(0,0,0,.075) !default;
+//$btn-active-box-shadow:          inset 0 3px 5px rgba(0,0,0,.125) !default;
+
+$btn-primary-color: $brand-primary !default;
+$btn-primary-bg: transparent !default;
+$btn-primary-border: $btn-primary-color !default;
+
+$btn-primary-hover-color: $brand-secondary !default;
+$btn-primary-hover-bg: transparent !default;
+$btn-primary-hover-border: $btn-primary-hover-color !default;
+
+//$btn-secondary-color:            $gray-dark !default;
+//$btn-secondary-bg:               #fff !default;
+//$btn-secondary-border:           #ccc !default;
+
+$input-font-size: $control-font-size !default;
+$input-padding-x: 12px !default;
+$input-padding-y: 4px !default;
+$input-line-height: $control-height - 2 * $input-padding-y - 2px !default;
+
+$input-bg:                       #fff !default;
+//$input-bg-disabled:              $gray-lighter !default;
+
+//$input-color:                    $gray !default;
+//$input-border-color:             rgba(0,0,0,.15) !default;
+//$input-btn-border-width:         $border-width !default; // For form controls and buttons
+//$input-box-shadow:               inset 0 1px 1px rgba(0,0,0,.075) !default;
+
+$input-border-radius:            $border-radius !default;
