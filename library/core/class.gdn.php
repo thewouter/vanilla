@@ -442,6 +442,9 @@ class Gdn {
         return self::$_PluginManager; //self::Factory(self::AliasPluginManager);
     }
 
+    /**
+     * @return Gdn_Regarding
+     */
     public static function regarding() {
         return self::factory('Regarding');
     }
