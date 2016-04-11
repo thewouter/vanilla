@@ -1395,8 +1395,6 @@ class SettingsController extends DashboardController {
                 }
 
                 saveToConfig($ConfigSaveData);
-                $this->fireEvent['AfterSaveThemeOptions'];
-
                 $this->informMessage(t("Your changes have been saved."));
             }
 
