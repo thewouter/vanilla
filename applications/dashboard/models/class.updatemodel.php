@@ -7,6 +7,7 @@
  * @package Dashboard
  * @since 2.0
  */
+use Vanilla\Addon;
 
 /**
  * Handles updating.
@@ -907,60 +908,92 @@ class UpdateModel extends Gdn_Model {
     }
 
     /**
+     * Run the structure for all addons.
      *
+     * The structure runs the addons in priority order so that higher priority addons override lower priority ones.
      *
-     * @param null $AddonCode
-     * @param bool $Explicit
-     * @param bool $Drop
-     * @throws Exception
+     * @param Addon|null $addon Run the structure on just one addon. Pass **null** to run the structure on all addons.
+     * @param bool $captureOnly Whether to run the structure or just capture the SQL.
+     * @return array Returns the SQL that will be executed if {@link $captureOnly} is **true**, otherwise returns an
+     * empty array.
+     * @throws Exception Throws an exception if in debug mode and something goes wrong.
      */
-    public function runStructure($AddonCode = null, $Explicit = false, $Drop = false) {
-        // Get the structure files for all of the enabled applications.
-        $ApplicationManager = new Gdn_ApplicationManager();
-        $Apps = $ApplicationManager->enabledApplications();
-        $AppNames = consolidateArrayValuesByKey($Apps, 'Folder');
-        $Paths = array();
-        foreach ($Apps as $Key => $AppInfo) {
-            $Path = PATH_APPLICATIONS."/{$AppInfo['Folder']}/settings/structure.php";
-            if (file_exists($Path)) {
-                $Paths[] = $Path;
-            }
-
-            Gdn::applicationManager()->registerPermissions($Key, $this->Validation);
+    public function runStructure(Addon $addon = null, $captureOnly = false) {
+        if ($addon !== null) {
+            $addons = [$addon];
+        } else {
+            $addons = array_reverse(Gdn::addonManager()->getEnabled());
         }
 
-        // Execute the structures.
+        // These variables are required for included structure files.
         $Database = Gdn::database();
-        $SQL = Gdn::sql();
+        $SQL = $this->SQL;
+        $SQL->CaptureModifications = $captureOnly;
         $Structure = Gdn::structure();
+        $Structure->CaptureOnly = $captureOnly;
 
-        foreach ($Paths as $Path) {
-            include $Path;
-        }
+        /* @var Addon $addon */
+        foreach ($addons as $addon) {
+            // Look for a structure file.
+            if ($structure = $addon->getSpecial('structure')) {
+                Logger::event(
+                    'addon_structure',
+                    Logger::INFO,
+                    "Executing structure for {addonKey}.",
+                    ['addonKey' => $addon->getKey(), 'structureType' => 'file']
+                );
 
-        // Execute the structures for all of the plugins.
-        $PluginManager = Gdn::pluginManager();
-
-        $Registered = $PluginManager->registeredPlugins();
-
-        foreach ($Registered as $ClassName => $Enabled) {
-            if (!$Enabled) {
-                continue;
+                try {
+                    include $addon->path($structure);
+                } catch (\Exception $ex) {
+                    if (debug()) {
+                        throw $ex;
+                    }
+                }
             }
 
-            try {
-                $Plugin = $PluginManager->getPluginInstance($ClassName, Gdn_PluginManager::ACCESS_CLASSNAME);
-                if (method_exists($Plugin, 'Structure')) {
-                    trace("{$ClassName}->Structure()");
-                    $Plugin->structure();
+            // Look for a structure method on the plugin.
+            if ($addon->getPluginClass()) {
+                $plugin = Gdn::pluginManager()->getPluginInstance(
+                    $addon->getPluginClass(),
+                    Gdn_PluginManager::ACCESS_CLASSNAME
+                );
+
+                if (is_object($plugin) && method_exists($plugin, 'structure')) {
+                    Logger::event(
+                        'addon_structure',
+                        Logger::INFO,
+                        "Executing structure for {addonKey}.",
+                        ['addonKey' => $addon->getKey(), 'structureType' => 'method']
+                    );
+
+                    try {
+                        call_user_func([$plugin, 'structure']);
+                    } catch (\Exception $ex) {
+                        if (debug()) {
+                            throw $ex;
+                        }
+                    }
                 }
-            } catch (Exception $Ex) {
-                // Do nothing, plugin wouldn't load/structure.
-                if (Debug()) {
-                    throw $Ex;
-                }
+            }
+
+            // Register permissions.
+            $permissions = $addon->getInfoValue('registerPermissions');
+            if (!empty($permissions)) {
+                Logger::event(
+                    'addon_permissions',
+                    Logger::INFO,
+                    "Defining permissions for {addonKey}.",
+                    ['addonKey' => $addon->getKey(), 'permissions' => $permissions]
+                );
+                Gdn::permissionModel()->define($permissions);
             }
         }
         $this->fireEvent('AfterStructure');
+
+        if ($captureOnly && property_exists($Structure->Database, 'CapturedSql')) {
+            return $Structure->Database->CapturedSql;
+        }
+        return [];
     }
 }
