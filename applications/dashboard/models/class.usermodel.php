@@ -1043,7 +1043,7 @@ class UserModel extends Gdn_Model {
         }
         if ($avatar = c('Garden.DefaultAvatar', false)) {
             if (strpos($avatar, 'defaultavatar/') !== false) {
-                if($size == 'thumbnail') {
+                if ($size == 'thumbnail') {
                     return Gdn_UploadImage::url(changeBasename($avatar, 'n%s'));
                 } elseif ($size == 'profile') {
                     return Gdn_UploadImage::url(changeBasename($avatar, 'p%s'));
@@ -1666,7 +1666,7 @@ class UserModel extends Gdn_Model {
             ->get();
 
         // Set corrected PhotoUrls.
-        $Result =& $Data->result();
+        $Result = & $Data->result();
         foreach ($Result as &$Row) {
             if ($Row->Photo && !isUrl($Row->Photo)) {
                 $Row->Photo = Gdn_Upload::url($Row->Photo);
@@ -2026,7 +2026,7 @@ class UserModel extends Gdn_Model {
             // Only fields that are present in the schema
             $Fields = $this->Validation->schemaValidationFields();
 
-            // Remove the primary key from the fields collection before saving
+            // Remove the primary key from the fields collection before saving.
             unset($Fields[$this->PrimaryKey]);
 
             if (!$Insert && array_key_exists('Password', $Fields) && val('HashPassword', $Settings, true)) {
@@ -2272,8 +2272,8 @@ class UserModel extends Gdn_Model {
         $OldRoleIDs = array();
         $OldRoleData = $this->SQL
             ->select('ur.RoleID, r.Name')
-            ->from('Role r')
-            ->join('UserRole ur', 'r.RoleID = ur.RoleID')
+            ->from('UserRole ur')
+            ->join('Role r', 'r.RoleID = ur.RoleID', 'left')
             ->where('ur.UserID', $UserID)
             ->get()
             ->resultArray();
@@ -2283,9 +2283,16 @@ class UserModel extends Gdn_Model {
         }
 
         // 1a) Figure out which roles to delete.
-        $DeleteRoleIDs = array_diff($OldRoleIDs, $RoleIDs);
+        $DeleteRoleIDs = [];
+        foreach ($OldRoleData as $row) {
+            // The role should be deleted if it is an orphan or the user has not been assigned the role.
+            if ($row['Name'] === null || !in_array($row['RoleID'], $RoleIDs)) {
+                $DeleteRoleIDs[] = $row['RoleID'];
+            }
+        }
+
         // 1b) Remove old role associations for this user.
-        if (count($DeleteRoleIDs) > 0) {
+        if (!empty($DeleteRoleIDs)) {
             $this->SQL->whereIn('RoleID', $DeleteRoleIDs)->delete('UserRole', array('UserID' => $UserID));
         }
 
@@ -2300,27 +2307,20 @@ class UserModel extends Gdn_Model {
 
         $this->clearCache($UserID, array('roles', 'permissions'));
 
-        if ($RecordEvent && (count($DeleteRoleIDs) > 0 || count($InsertRoleIDs) > 0)) {
+        if ($RecordEvent) { //} && (!empty($DeleteRoleIDs) || !empty($InsertRoleIDs))) {
             $User = $this->getID($UserID);
-            $Session = Gdn::session();
 
-            $OldRoles = false;
-            if ($OldRoleData !== false) {
-                $OldRoles = array_column($OldRoleData, 'Name');
+            $OldRoles = [];
+            foreach ($DeleteRoleIDs as $deleteRoleID) {
+                $role = RoleModel::roles($deleteRoleID);
+                $OldRoles[] = val('Name', $role, t('Unknown').' ('.$deleteRoleID.')');
             }
 
-            $NewRoles = false;
-            $NewRoleData = $this->SQL
-                ->select('r.RoleID, r.Name')
-                ->from('Role r')
-                ->join('UserRole ur', 'r.RoleID = ur.RoleID')
-                ->where('ur.UserID', $UserID)
-                ->get()
-                ->resultArray();
-            if ($NewRoleData !== false) {
-                $NewRoles = array_column($NewRoleData, 'Name');
+            $NewRoles = [];
+            foreach ($InsertRoleIDs as $insertRoleID) {
+                $role = RoleModel::roles($insertRoleID);
+                $NewRoles[] = val('Name', $role, t('Unknown').' ('.$insertRoleID.')');
             }
-
 
             $RemovedRoles = array_diff($OldRoles, $NewRoles);
             $NewRoles = array_diff($NewRoles, $OldRoles);
@@ -2330,7 +2330,7 @@ class UserModel extends Gdn_Model {
                     'role_remove',
                     Logger::INFO,
                     "{username} removed {toUsername} from the {role} role.",
-                    array('toUsername' => $User->Name, 'role' => $RoleName)
+                    array('touserid' => $User->UserID, 'toUsername' => $User->Name, 'role' => $RoleName)
                 );
             }
 
@@ -2339,35 +2339,7 @@ class UserModel extends Gdn_Model {
                     'role_add',
                     Logger::INFO,
                     "{username} added {toUsername} to the {role} role.",
-                    array('toUsername' => $User->Name, 'role' => $RoleName)
-                );
-            }
-
-            $RemovedCount = count($RemovedRoles);
-            $NewCount = count($NewRoles);
-            $Story = '';
-            if ($RemovedCount > 0 && $NewCount > 0) {
-                $Story = sprintf(
-                    t('%1$s was removed from the %2$s %3$s and added to the %4$s %5$s.'),
-                    $User->Name,
-                    implode(', ', $RemovedRoles),
-                    plural($RemovedCount, 'role', 'roles'),
-                    implode(', ', $NewRoles),
-                    plural($NewCount, 'role', 'roles')
-                );
-            } elseif ($RemovedCount > 0) {
-                $Story = sprintf(
-                    t('%1$s was removed from the %2$s %3$s.'),
-                    $User->Name,
-                    implode(', ', $RemovedRoles),
-                    plural($RemovedCount, 'role', 'roles')
-                );
-            } elseif ($NewCount > 0) {
-                $Story = sprintf(
-                    t('%1$s was added to the %2$s %3$s.'),
-                    $User->Name,
-                    implode(', ', $NewRoles),
-                    plural($NewCount, 'role', 'roles')
+                    array('touserid' => $User->UserID, 'toUsername' => $User->Name, 'role' => $RoleName)
                 );
             }
         }
@@ -2465,7 +2437,7 @@ class UserModel extends Gdn_Model {
             ->limit($Limit, $Offset)
             ->get();
 
-        $Result =& $Data->result();
+        $Result = & $Data->result();
 
         foreach ($Result as &$Row) {
             if ($Row->Photo && !isUrl($Row->Photo)) {
@@ -2754,7 +2726,7 @@ class UserModel extends Gdn_Model {
             if (val('CheckCaptcha', $Options, true)) {
                 $CaptchaValid = ValidateCaptcha();
                 if ($CaptchaValid !== true) {
-                    $this->Validation->addValidationResult('Garden.Registration.CaptchaPublicKey', 'The reCAPTCHA value was not entered correctly. Please try again.');
+                    $this->Validation->addValidationResult('Garden.Registration.CaptchaPublicKey', 'The reCAPTCHA was not completed correctly. Please try again.');
                     return false;
                 }
             }
@@ -2825,7 +2797,7 @@ class UserModel extends Gdn_Model {
                 $CaptchaPublicKey = val('Garden.Registration.CaptchaPublicKey', $FormPostValues, '');
                 $CaptchaValid = validateCaptcha($CaptchaPublicKey);
                 if ($CaptchaValid !== true) {
-                    $this->Validation->addValidationResult('Garden.Registration.CaptchaPublicKey', 'The reCAPTCHA value was not entered correctly. Please try again.');
+                    $this->Validation->addValidationResult('Garden.Registration.CaptchaPublicKey', 'The reCAPTCHA was not completed correctly. Please try again.');
                     return false;
                 }
             }
@@ -2954,7 +2926,7 @@ class UserModel extends Gdn_Model {
         }
 
         if (!empty($Set)) {
-            $this->EventArguments['Fields'] =& $Set;
+            $this->EventArguments['Fields'] = & $Set;
             $this->fireEvent('UpdateVisit');
 
             $this->setField($UserID, $Set);
@@ -3325,7 +3297,7 @@ class UserModel extends Gdn_Model {
         // Fire an event so applications can remove their associated user data.
         $this->EventArguments['UserID'] = $UserID;
         $this->EventArguments['Options'] = $Options;
-        $this->EventArguments['Content'] =& $Content;
+        $this->EventArguments['Content'] = & $Content;
         $this->fireEvent('BeforeDeleteUser');
 
         $User = $this->getID($UserID, DATASET_TYPE_ARRAY);
@@ -3734,7 +3706,7 @@ class UserModel extends Gdn_Model {
             setValue('_CssClass', $User, 'Banned');
         }
 
-        $this->EventArguments['User'] =& $User;
+        $this->EventArguments['User'] = & $User;
         $this->fireEvent('SetCalculatedFields');
     }
 
@@ -3902,25 +3874,7 @@ class UserModel extends Gdn_Model {
 
         $message = '<p>'.formatString(t('Hello {User.Name}!'), $Data).' ';
 
-        switch($RegisterType) {
-            case 'Connect' :
-                $message .= formatString(t('You have successfully connected to {Title}.'), $Data).' '.
-                    t('Find your account information below.').'<br></p>'.
-                    '<p>'.sprintf(t('%s: %s'), t('Username'), val('Name', $User)).'<br>'.
-                    formatString(t('Connected With: {ProviderName}'), $Data).'</p>';
-                break;
-            case 'Register' :
-                $message .= formatString(t('You have successfully registered for an account at {Title}.'), $Data).' '.
-                    t('Find your account information below.').'<br></p>'.
-                    '<p>'.sprintf(t('%s: %s'), t('Username'), val('Name', $User)).'<br>'.
-                    sprintf(t('%s: %s'), t('Email'), val('Email', $User)).'</p>';
-                break;
-            default :
-                $message .= sprintf(t('%s has created an account for you at %s.'), val('Name', $Sender), $AppTitle).' '.
-                    t('Find your account information below.').'<br></p>'.
-                    '<p>'.sprintf(t('%s: %s'), t('Email'), val('Email', $User)).'<br>'.
-                    sprintf(t('%s: %s'), t('Password'), $Password).'</p>';
-        }
+        $message .= $this->getEmailWelcome($RegisterType, $User, $Data, $Password);
 
         // Add the email confirmation key.
         if ($Data['EmailKey']) {
@@ -3937,6 +3891,56 @@ class UserModel extends Gdn_Model {
 
         $Email->setEmailTemplate($emailTemplate);
         $Email->send();
+    }
+
+    /**
+     * Resolves the welcome email format. Maintains backwards compatibility with the 'EmailWelcome*' translations
+     * for overriding.
+     *
+     * @param string $registerType The registration type. One of 'Connect', 'Register' or 'Add'.
+     * @param object|array $user The user to send the email to.
+     * @param array $data The email data.
+     * @param string $password The user's password.
+     * @return string The welcome email for the registration type.
+     */
+    protected function getEmailWelcome($registerType, $user, $data, $password = '') {
+        $appTitle = c('Garden.Title');
+
+        // Backwards compatability. See if anybody has overridden the EmailWelcome string.
+        if (($emailFormat = t('EmailWelcome'.$registerType, ''))) {
+            $welcome = formatString($emailFormat, $data);
+        } elseif (t('EmailWelcome', '')) {
+            $welcome = sprintf(
+                t('EmailWelcome'),
+                val('Name', $user),
+                val('Name', val('Sender', $data)),
+                $appTitle,
+                externalUrl('/'),
+                $password,
+                val('Email', $user)
+            );
+        } else {
+            switch ($registerType) {
+                case 'Connect' :
+                    $welcome = formatString(t('You have successfully connected to {Title}.'), $data).' '.
+                        t('Find your account information below.').'<br></p>'.
+                        '<p>'.sprintf(t('%s: %s'), t('Username'), val('Name', $user)).'<br>'.
+                        formatString(t('Connected With: {ProviderName}'), $data).'</p>';
+                    break;
+                case 'Register' :
+                    $welcome = formatString(t('You have successfully registered for an account at {Title}.'), $data).' '.
+                        t('Find your account information below.').'<br></p>'.
+                        '<p>'.sprintf(t('%s: %s'), t('Username'), val('Name', $user)).'<br>'.
+                        sprintf(t('%s: %s'), t('Email'), val('Email', $user)).'</p>';
+                    break;
+                default :
+                    $welcome = sprintf(t('%s has created an account for you at %s.'), val('Name', val('Sender', $data)), $appTitle).' '.
+                        t('Find your account information below.').'<br></p>'.
+                        '<p>'.sprintf(t('%s: %s'), t('Email'), val('Email', $user)).'<br>'.
+                        sprintf(t('%s: %s'), t('Password'), $password).'</p>';
+            }
+        }
+        return $welcome;
     }
 
     /**
