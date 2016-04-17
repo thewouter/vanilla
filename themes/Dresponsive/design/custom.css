@@ -1,0 +1,246 @@
+/********************************************************
+ *
+ * DEVELOPED BY:  O.W.M Consulting (OURWEBMEDIA)
+ * WWW: http://www.ourwebmedia.com
+ * EMAIL: services@ourwebmedia.com
+ * Last Edited: April 6th, 2014 by Bryce Wisekal
+ * We learn through trial and error - don't get up!
+ *
+ *******************************************************/
+
+
+
+/*******************************************************
+ * Basic Elements
+ ******************************************************/
+
+
+
+/*******************************************************
+ * Typography
+ ******************************************************/
+
+
+
+/*******************************************************
+ * Color Elements
+ ******************************************************/
+
+
+
+/*******************************************************
+ * Top Section or Header
+ ******************************************************/
+
+
+
+/*******************************************************
+ * Body
+ ******************************************************/
+
+#Body {
+	width: 100%;
+}
+
+#Menu {
+	margin-right: auto;
+}
+
+.Menu {
+	width: 100%;
+	padding: 10px;
+}
+
+#Head .Search, #Head #Search {
+	right: 20px;
+	position: relative;
+}
+
+#Head form {
+	width: auto;
+}
+
+#Head form input.InputBox {
+	width: auto;
+}
+
+.container {
+	max-width: 960px;
+	width: auto;
+	margin: 0px auto;
+	padding: 0 20px;
+}
+
+#Content {
+	width: 100%;
+	float: left;
+	padding-right: 20px;
+}
+
+.Tabs {
+	width: auto;
+}
+
+/*******************************************************
+ * Discussions
+ ******************************************************/
+
+.Discussions {
+	width: auto;
+}
+
+.DataList .Item {
+	width: 100%;
+}
+
+/*******************************************************
+ * Single Discussions
+ ******************************************************/
+
+.MessageList .Item {
+	padding: 0px;
+}
+
+.Comment {
+	padding: 10px;
+}
+
+/*******************************************************
+ * Archives
+ ******************************************************/
+
+
+
+/*******************************************************
+ * Activities
+ ******************************************************/
+
+.Activities .HasPhoto .ItemContent {
+	width: 100%;
+	margin-left: 0px;
+}
+
+.Activities ul.DataList {
+	width: auto;
+}
+
+.Activities .Photo {
+	width: 50px;
+	height: 50px;
+	float: left;
+}
+
+.Activities .DataList li {
+	padding: 0px;
+}
+
+/*******************************************************
+ * Messages and Inbox
+ ******************************************************/
+
+
+
+/*******************************************************
+ * Profiles
+ ******************************************************/
+
+body.Profile #Content {
+	width: 100%;
+	padding: 0px;
+	float: right;
+}
+
+body.Profile #Panel {
+	float: left;
+	width: 100%;
+}
+
+/*******************************************************
+ * Login and Registration
+ ******************************************************/
+
+body.Entry #Content {
+	width: 100%;
+}
+
+body.Entry input.DateBox, body.Entry input.InputBox, body.Entry textarea {
+	width: 100%;
+}
+
+/*******************************************************
+ * Sidebar
+ ******************************************************/
+
+#Panel {
+	float: right;
+	width: 100%;
+}
+
+/*******************************************************
+ * Footer
+ ******************************************************/
+
+#Foot div {
+	width: 100%;
+}
+
+
+
+/*@media (max-width: 767px) and (min-width: 481px) {*/
+
+@media (min-width: 1024px) {
+	#Content {
+		width: 680px;
+	}
+	#Panel {
+		width: 250px;
+	}
+	body.Profile #Content {
+		width: 690px;
+	}
+	body.Profile #Panel {
+		width: 250px;
+	}
+	body.Entry #Content {
+		width: 360px;
+	}
+	body.Entry input.DateBox, body.Entry input.InputBox, body.Entry textarea {
+		width: 310px;
+	}
+}
+
+/* Landscape Tablet Width */
+@media (max-width: 1024px) {
+
+}
+
+/* Portrait Tablet Width */
+@media (max width: 768px) {
+
+}
+
+/* Landscape iPhone 5 Width */
+@media (max width: 568px) {
+
+}
+
+/* Landscape iPhone 4 Width */
+@media (max width: 480px) {
+
+}
+
+/* Portrait iPhone 4/5 Width */
+@media (max width: 320px) {
+
+}
+
+
+
+/*******************************************************
+ * ADD YOUR OWN NEW STYLING BENEATH HERE TO SEPARATE IT
+ * THIS IS HELPFUL TO ENSURE YOU UPDATE PAINLESSLY
+ * ITS NEVER FUN CARRYING OVER A BUNCH OF MODIFICATIONS
+ * SO STAY PREPARED BY ADDING YOUR MODIFICATIONS BELOW
+ *******************************************************/
+
+
