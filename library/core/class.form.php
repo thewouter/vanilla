@@ -805,95 +805,98 @@ class Gdn_Form extends Gdn_Pluggable {
      *       Fields, array of month, day, year. Those are only valid values. Order matters.
      * @return string
      */
-    public function date($FieldName, $Attributes = false) {
-        $Return = '';
-        $YearRange = arrayValueI('yearrange', $Attributes, false);
-        $StartYear = 0;
-        $EndYear = 0;
-        if ($YearRange !== false) {
-            if (preg_match("/^[\d]{4}-{1}[\d]{4}$/i", $YearRange) == 1) {
-                $StartYear = substr($YearRange, 0, 4);
-                $EndYear = substr($YearRange, 5);
-            }
-        }
-        if ($YearRange === false || $StartYear > $EndYear) {
-            $StartYear = 1900;
-            $EndYear = date('Y');
-        }
-
-        $Months = array_map(
-            'T',
-            explode(',', 'Month,Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec')
-        );
-
-        $Days = array();
-        $Days[] = T('Day');
-        for ($i = 1; $i < 32; ++$i) {
-            $Days[] = $i;
-        }
-
-        $Years = array();
-        $Years[0] = T('Year');
-        for ($i = $StartYear; $i <= $EndYear; ++$i) {
-            $Years[$i] = $i;
-        }
-
-        // Show inline errors?
-        $ShowErrors = $this->_InlineErrors && array_key_exists($FieldName, $this->_ValidationResults);
-
-        // Add error class to input element
-        if ($ShowErrors) {
-            $this->addErrorClass($Attributes);
-        }
-
-        // Never display individual inline errors for these DropDowns
-        $Attributes['InlineErrors'] = false;
-
-        $CssClass = arrayValueI('class', $Attributes, '');
-
-        $SubmittedTimestamp = ($this->getValue($FieldName) > 0) ? strtotime($this->getValue($FieldName)) : false;
-
-        // Allow us to specify which fields to show & order
-        $Fields = arrayValueI('fields', $Attributes, array('month', 'day', 'year'));
-        if (is_array($Fields)) {
-            foreach ($Fields as $Field) {
-                switch ($Field) {
-                    case 'month':
-                        // Month select
-                        $Attributes['class'] = trim($CssClass.' Month');
-                        if ($SubmittedTimestamp) {
-                            $Attributes['Value'] = date('n', $SubmittedTimestamp);
-                        }
-                        $Return .= $this->dropDown($FieldName.'_Month', $Months, $Attributes);
-                        break;
-                    case 'day':
-                        // Day select
-                        $Attributes['class'] = trim($CssClass.' Day');
-                        if ($SubmittedTimestamp) {
-                            $Attributes['Value'] = date('j', $SubmittedTimestamp);
-                        }
-                        $Return .= $this->dropDown($FieldName.'_Day', $Days, $Attributes);
-                        break;
-                    case 'year':
-                        // Year select
-                        $Attributes['class'] = trim($CssClass.' Year');
-                        if ($SubmittedTimestamp) {
-                            $Attributes['Value'] = date('Y', $SubmittedTimestamp);
-                        }
-                        $Return .= $this->dropDown($FieldName.'_Year', $Years, $Attributes);
-                        break;
-                }
-            }
-        }
-
-        $Return .= '<input type="hidden" name="DateFields[]" value="'.$FieldName.'" />';
-
-        // Append validation error message
-        if ($ShowErrors) {
-            $Return .= $this->inlineError($FieldName);
-        }
-
-        return $Return;
+    public function date($FieldName, $Attributes = false, $datepicker=false) {
+    	if(!$datepicker){	
+	        $Return = '';
+	        $YearRange = arrayValueI('yearrange', $Attributes, false);
+	        $StartYear = 0;
+	        $EndYear = 0;
+	        if ($YearRange !== false) {
+	            if (preg_match("/^[\d]{4}-{1}[\d]{4}$/i", $YearRange) == 1) {
+	                $StartYear = substr($YearRange, 0, 4);
+	                $EndYear = substr($YearRange, 5);
+	            }
+	        }
+	        if ($YearRange === false || $StartYear > $EndYear) {
+	            $StartYear = 1900;
+	            $EndYear = date('Y');
+	        }
+	
+	        $Months = array_map(
+	            'T',
+	            explode(',', 'Month,Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec')
+	        );
+	
+	        $Days = array();
+	        $Days[] = T('Day');
+	        for ($i = 1; $i < 32; ++$i) {
+	            $Days[] = $i;
+	        }
+	
+	        $Years = array();
+	        $Years[0] = T('Year');
+	        for ($i = $StartYear; $i <= $EndYear; ++$i) {
+	            $Years[$i] = $i;
+	        }
+	
+	        // Show inline errors?
+	        $ShowErrors = $this->_InlineErrors && array_key_exists($FieldName, $this->_ValidationResults);
+	
+	        // Add error class to input element
+	        if ($ShowErrors) {
+	            $this->addErrorClass($Attributes);
+	        }
+	
+	        // Never display individual inline errors for these DropDowns
+	        $Attributes['InlineErrors'] = false;
+	
+	        $CssClass = arrayValueI('class', $Attributes, '');
+	
+	        $SubmittedTimestamp = ($this->getValue($FieldName) > 0) ? strtotime($this->getValue($FieldName)) : false;
+	
+	        // Allow us to specify which fields to show & order
+	        $Fields = arrayValueI('fields', $Attributes, array('month', 'day', 'year'));
+	        if (is_array($Fields)) {
+	            foreach ($Fields as $Field) {
+	                switch ($Field) {
+	                    case 'month':
+	                        // Month select
+	                        $Attributes['class'] = trim($CssClass.' Month');
+	                        if ($SubmittedTimestamp) {
+	                            $Attributes['Value'] = date('n', $SubmittedTimestamp);
+	                        }
+	                        $Return .= $this->dropDown($FieldName.'_Month', $Months, $Attributes);
+	                        break;
+	                    case 'day':
+	                        // Day select
+	                        $Attributes['class'] = trim($CssClass.' Day');
+	                        if ($SubmittedTimestamp) {
+	                            $Attributes['Value'] = date('j', $SubmittedTimestamp);
+	                        }
+	                        $Return .= $this->dropDown($FieldName.'_Day', $Days, $Attributes);
+	                        break;
+	                    case 'year':
+	                        // Year select
+	                        $Attributes['class'] = trim($CssClass.' Year');
+	                        if ($SubmittedTimestamp) {
+	                            $Attributes['Value'] = date('Y', $SubmittedTimestamp);
+	                        }
+	                        $Return .= $this->dropDown($FieldName.'_Year', $Years, $Attributes);
+	                        break;
+	                }
+	            }
+	        }
+	
+	        $Return .= '<input type="hidden" name="DateFields[]" value="'.$FieldName.'" />';
+	
+	        // Append validation error message
+	        if ($ShowErrors) {
+	            $Return .= $this->inlineError($FieldName);
+	        }
+	        return $Return;
+    	} else {
+    		echo "test";
+    	}
     }
 
     /**

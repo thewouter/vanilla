@@ -21,7 +21,6 @@ jQuery(document).ready(function($) {
   // hijack the results click
   $('#DP_Results a').click(function(event) {
     event.preventDefault();
-
     if ($(this).html() === ResultString) {
       var btn = this;
       // Load from ajax if they don't exist
@@ -36,6 +35,11 @@ jQuery(document).ready(function($) {
           beforeSend: function() {
             // add a spinner
             $(btn).after('<span class="DP_Spinner TinyProgress">&nbsp;</span>');
+          },
+          error: function(xhr, textStatus, errorThrown){
+              console.log(xhr);
+              console.log(textStatus);
+              console.log(errorThrown);
           },
           success: function(Data) {
             $('.DP_AnswerForm').after(Data.html);
@@ -121,6 +125,67 @@ jQuery(document).ready(function($) {
       }
     });
   });
+
+  //hijack the devote click
+  $('#DP_Devote a').click(function(event) {
+	    event.preventDefault();
+	    if ($(this).html() === ResultString || true) {
+	      var btn = this;
+	      // Load from ajax if they don't exist
+	      if ($('.DP_AnswerForm').length === 0) {
+	        // Load Results from ajax
+	        $.ajax({
+	          url: $(btn).attr('href'),
+	          global: false,
+	          type: 'POST',
+	          data: {PollID: $('#Form_PollID').val()},
+	          beforeSend: function() {
+	            // add a spinner
+	            $(btn).after('<span class="DP_Spinner TinyProgress">&nbsp;</span>');
+	          },
+	          error: function(xhr, textStatus, errorThrown){
+	              console.log(xhr);
+	              console.log(textStatus);
+	              console.log(errorThrown);
+	          },
+	          success: function(Data) {
+	            $('.DP_ResultsForm').after(Data.html);
+	            $('.DP_AnswerForm').hide();
+
+	            // Repeated here to account for slow hosts
+	            $('.DP_ResultsForm').fadeOut('slow', function() {
+	              $('.DP_AnswerForm').fadeIn('slow', function() {
+	                // Change tool mode
+	                $(btn).html(FormString);
+	              });
+	            });
+	            location.reload();
+	          },
+	          complete: function() {
+	            $('.DP_Spinner').remove();
+	          }
+	        });
+	      }
+	      else {
+	        // Bring poll to front
+	        $('.DP_ResultsForm').fadeOut('slow', function() {
+	          $('.DP_AnswerForm').fadeIn('slow', function() {
+	            // Change tool mode
+	            $(btn).html(FormString);
+	          });
+	        });
+	      }
+	    }
+	    else {
+	      // Bring results form to front
+	      $('.DP_AnswerForm').fadeOut('slow', function() {
+	        $('.DP_ResultsForm').fadeIn('slow');
+	      });
+
+	      // Change tool mode
+	      $(this).html(ResultString);
+	    }
+	  });
 
   // hijack the delete click
   $('#DP_Remove a').popup({

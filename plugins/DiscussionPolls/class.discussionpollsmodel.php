@@ -49,6 +49,45 @@ class DiscussionPollsModel extends Gdn_Model {
     self::$Cache['Exists'][$DiscussionID] = $Data;
     return !empty($Data);
   }
+  
+  /**
+   * removes the vote from the poll
+   * @param int $UserID
+   * @param int $PollID
+   * @return boolean succes
+   */
+  public function DeVote($UserID, $PollID){
+  	if($UserID > 0 && $PollID > 0){
+  		try {
+  			$this->SQL
+  					->select('a.OptionID')
+  					->from('DiscussionPollAnswers a')
+  					->where(array('PollID' => $PollID,  'UserID' => $UserID));
+  			$OptionID = $this->SQL->Get()->Result();
+  			$this->SQL
+  					->select('a.QuestionID')
+  					->from('DiscussionPollAnswers a')
+  					->where(array('PollID' => $PollID, 'UserID' => $UserID));
+  			$QuestionID = $this->SQL->Get()->Result();
+  			$this->SQL
+	              	->Update('DiscussionPollQuestionOptions')
+	              	->Set('CountVotes', 'CountVotes - 1', FALSE)
+	              	->Where('OptionID', $OptionID[0]->OptionID)
+	              	->Put();
+            $this->SQL
+	              	->Update('DiscussionPollQuestions')
+	              	->Set('CountResponses', 'CountResponses - 1', FALSE)
+	              	->Where('QuestionID', $QuestionID[0]->QuestionID)
+	              	->Put();
+  			$this->SQL->Delete('DiscussionPollAnswers', array('PollID' => $PollID, 'UserID' => $UserID));
+  		} catch (Exception $e) {
+  			file_put_contents('php://stderr', print_r('Caught exception: ' . $e->getTrace() . "\n", TRUE));
+  			return false;
+  		}
+  	} 
+  	return true;
+  }
+  
 
   /**
    * Determines if a poll associated with the discussion has been answered at all
@@ -105,14 +144,12 @@ class DiscussionPollsModel extends Gdn_Model {
             ->From('DiscussionPolls p')
             ->Join('DiscussionPollQuestions q', 'p.PollID = q.PollID')
             ->Join('DiscussionPollQuestionOptions o', 'q.QuestionID = o.QuestionID')
-            ->join('DiscussionPollAnswers a', 'a.OptionID = o.OptionID', 'left outer')
-            ->join('User u', 'u.UserID = a.UserID', 'left outer')
+            ->Join('DiscussionPollAnswers a', 'a.OptionID = o.OptionID', 'left outer')
+            ->Join('User u', 'u.UserID = a.UserID', 'left outer')
             ->Where('p.PollID', $PollID);
 
     $DBResult = $this->SQL->Get()->Result();
-    //print_r($DBResult);
 
-    echo "<br><br>";
     if(!empty($DBResult)) {
       $Data = array(
           'PollID' => $DBResult[0]->PollID,
@@ -122,6 +159,7 @@ class DiscussionPollsModel extends Gdn_Model {
           'Questions' => array()
       );
     }
+    
     else {
       // Pass an empty array back
       $Data = array(

@@ -150,7 +150,6 @@ class DiscussionPolls extends Gdn_Plugin {
   public function Controller_Results($Sender) {
     $DPModel = new DiscussionPollsModel();
     $Poll = $DPModel->Get($Sender->RequestArgs[1]);
-
     $PollResults = $this->_RenderResults($Poll, FALSE);
     if($Sender->DeliveryType() == DELIVERY_TYPE_VIEW) {
       $Data = array('html' => $PollResults);
@@ -162,11 +161,26 @@ class DiscussionPolls extends Gdn_Plugin {
     }
   }
 
-  /*
-   * Renders the results of deleting a poll
-   * This will only be seen on legacy systems without JS
+  /**
+   * Remove vote from poll
    * @param VanillaController $Sender DiscussionController
    */
+  
+  public function Controller_Devote($Sender){
+  	$Session = Gdn::session();
+  	$UserID = $Session->UserID;
+  	$PollID = $_POST['PollID'];
+
+  	$DPModel = new DiscussionPollsModel();
+  	$DPModel->DeVote($UserID, $PollID);
+  	
+  	if($Sender->DeliveryType() == DELIVERY_TYPE_VIEW) {
+  		$Results = $this->_RenderQuestionFields($Poll, FALSE);
+  		$Type = 'Full Poll';
+  		$Data = array('html' => $Results, 'type' => $Type);
+  		echo json_encode($Data);
+  	}
+  }
 
   public function Controller_Delete($Sender) {
     $Session = Gdn::Session();
@@ -262,6 +276,29 @@ class DiscussionPolls extends Gdn_Plugin {
    */
   public function DiscussionController_AfterDiscussionBody_Handler($Sender) {
     $this->_PollInsertion($Sender);
+  }
+  
+  public function PostController_BeforeBodyInput_Handler($Sender) {
+  	if (!$Sender->Form->authenticatedPostBack()) {
+  			
+  		if ($Sender->Discussion->DiscussionEventDate) {
+  			$Sender->Form->setValue('DiscussionEventCheck', true);
+  			$Sender->Form->setValue('DiscussionEventDate', $Sender->Discussion->DiscussionEventDate);
+  		} else {
+  			$Sender->Form->setValue('DiscussionEventCheck', false);
+  			$Sender->Form->setValue('DiscussionEventDate',  Gdn_Format::date('Y-m-d'));
+  		}
+  	}
+  	
+  	$Year = Date('Y');
+  	$YearRange = $Year.'-'.($Year + 3);
+  	
+  	echo '<div class="P"><div class="DiscussionEvent">';
+  	echo $Sender->Form->checkBox('DiscussionEventCheck', 'Is an event?');
+  	echo '<div class="DiscussionEventDate"><div class="P">';
+  	echo $Sender->Form->label('Date', 'DiscussionEventDate'), ' ';
+  	echo $Sender->Form->date('DiscussionEventDate', array('YearRange' => $YearRange, 'fields' => array('day', 'month', 'year')), true);
+  	echo '</div></div></div></div>';
   }
 
   /**
@@ -549,6 +586,12 @@ class DiscussionPolls extends Gdn_Plugin {
         );
       }
 
+      if($Results ) {
+        $Tools .= Wrap(
+                Anchor(T('Remove Vote'), '/discussion/poll/devote/' . $Poll->PollID), 'li', array('id' => 'DP_Devote')
+        );
+      }
+
       echo WrapIf($Tools, 'ul', array('id' => 'DP_Tools'));
     }
     else {
@@ -661,8 +704,13 @@ class DiscussionPolls extends Gdn_Plugin {
    * Setup database structure for model
    */
   public function Structure() {
+  	
     $Database = Gdn::Database();
     $Construct = $Database->Structure();
+    
+    $Construct->table('Discussion')
+    		->column('DiscussionEventDate', 'date', true, 'index')
+    		->set();
 
     $Construct->Table('DiscussionPolls');
     $Construct

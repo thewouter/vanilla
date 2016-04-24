@@ -38,5 +38,4 @@
 </div>
 {event name="AfterBody"}
 </body>
-lalalala
 </html>

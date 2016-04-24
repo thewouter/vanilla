@@ -21,9 +21,10 @@ function DPRenderResults($Poll) {
         //do nothing
       }
       else if(!count($Poll->Questions)) {
-        echo Wrap(T('Plugins.DiscussionPolls.NoReults', 'No results for this poll'));
+        echo Wrap(T('Plugins.DiscussionPolls.NoResults', 'No results for this poll'));
       }
       else {
+  		echo Wrap("", 'input', array('id' => 'Form_PollID', 'type' => 'hidden', 'value' => $Poll->PollID));
         foreach($Poll->Questions as $Question) {
           RenderQuestion($Question);
         }
@@ -36,7 +37,6 @@ function RenderQuestion($Question) {
   echo '<li class="DP_ResultQuestion">';
   echo Wrap($Question->Title, 'span');
   echo Wrap(sprintf(Plural($Question->CountResponses, '%s vote', '%s votes'), $Question->CountResponses), 'span', array('class' => 'Number DP_VoteCount'));
-
   // 'randomize' option bar colors
   $k = $Question->QuestionID % 10;
   echo '<ol class="DP_ResultOptions">';
